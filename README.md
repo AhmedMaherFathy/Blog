@@ -7,6 +7,9 @@ Packages Used:
 
         tymon/jwt-auth
 
+design pattern used
+        Service pattern
+
 Implementation Steps:
         I created a middleware called SetLanguageMiddleware to change the language based on the Accept-Language header.
 
