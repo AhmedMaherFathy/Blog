@@ -22,8 +22,9 @@ class PostRequest extends FormRequest
      */
     public function rules(): array
     {
-        $inUpdate =  $this->method('put') ? 'sometimes' : 'required' ;
-
+        $inUpdate = ! preg_match('/.*posts$/', $this->url());
+        $inUpdate = $inUpdate ? 'sometimes' : 'required' ;
+        
         return [
             'title' => $inUpdate.'|array',
             'title.en' => $inUpdate.'|string',
