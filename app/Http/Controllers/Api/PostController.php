@@ -17,11 +17,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class PostController extends Controller
 {
     use HttpResponse;
-    public function index()
-    {
-        $posts = Post::with(['user', 'media'])->get();
-        return response()->json($posts);
-    }
 
     public function store(PostRequest $request)
     {
