@@ -21,7 +21,7 @@ class PostService
         ]);
 
         if ($images) {
-            $this->addPostMedia($post, $images);
+            $post->addMultipleMediaFromRequest($images);
         }
 
         return $post;
@@ -55,7 +55,7 @@ class PostService
             $post->update($updateData);
 
             if ($images) {
-                $this->updatePostMedia($post, $images);
+                $post->updatePostMedia($images);
             }
 
             return $post->refresh();
@@ -75,18 +75,5 @@ class PostService
             $post->comments()->delete();
             $post->delete();
         });
-    }
-
-    protected function addPostMedia(Post $post, array $images): void
-    {
-        foreach ($images as $image) {
-            $post->addMedia($image)->toMediaCollection('post_images');
-        }
-    }
-
-    protected function updatePostMedia(Post $post, array $images): void
-    {
-        $post->clearMediaCollection('post_images');
-        $this->addPostMedia($post, $images);
     }
 }
