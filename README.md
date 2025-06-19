@@ -24,6 +24,7 @@ Implementation Steps:
 
 
 Post 
+
         Multilingual Content Management
         The system stores both titles and content in bilingual format (English and Arabic) using JSON data type, enabling seamless multilingual support.
 
@@ -43,3 +44,21 @@ Post
         Created timestamps are formatted for improved human readability
 
         Delivers user-friendly date display while maintaining ISO standards
+
+        When I delete a post a delete also related media and comment
+
+
+Comment 
+
+        Hierarchical Threading
+        Supports unlimited nested replies via parent_id tracking
+
+        Distinguishes between top-level comments and replies
+
+        Optimized Data Retrieval
+
+        Separates comment loading from post display API
+
+        Prevents performance issues with large comment threads
+
+        Efficient eager loading of reply structures
