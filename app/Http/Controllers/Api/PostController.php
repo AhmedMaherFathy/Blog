@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Post;
-use Illuminate\Support\Str;
+use App\Services\PostService;
 use App\Traits\HttpResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\PostRequest;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -18,78 +15,63 @@ class PostController extends Controller
 {
     use HttpResponse;
 
+    public function __construct(
+        private PostService $postService
+    ) {}
+
     public function store(PostRequest $request)
     {
-        $post = Post::create([
-            'title' => $request->validated()['title'],
-            'content' => $request->validated()['content'],
-            'user_id' => auth()->id()
-        ]);
+        try {
+            $post = $this->postService->createPost(
+                $request->validated(),
+                $request->hasFile('images') ? $request->file('images') : null
+            );
 
-        if ($request->hasFile('images')) {
-            $post->addMultipleMediaFromRequest($request->file('images'));
+            return $this->successResponse(
+                data: new PostResource($post),
+                message: 'Post created successfully',
+                code: 201
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                message: 'Failed to create post',
+                status: 500
+            );
         }
-
-        return $this->successResponse(message: 'Post created successfully', code: 201);
     }
 
     public function show($slug)
     {
-        $post = Post::where('slug', $slug)
-            ->with(['user:name,id', 'media'])
-            ->firstOrFail();
-
-        return $this->successResponse(new PostResource($post));
+        try {
+            $post = $this->postService->getPostBySlug($slug);
+            return $this->successResponse(new PostResource($post));
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse(
+                message: 'Post not found',
+                status: 404
+            );
+        }
     }
 
     public function update(PostRequest $request, string $slug)
     {
         try {
-            DB::beginTransaction();
-
-            $post = Post::with('media')
-                ->where('slug', $slug)
-                ->firstOrFail();
-            Gate::authorize('update', $post);
-
-
-            $updateData = [
-                'title' => $request->validated('title'),
-                'content' => $request->validated('content'),
-            ];
-            $slug = $post->slug;
-
-            if ($request->has('title.en')) {
-                $updateData['slug'] = Str::slug($request->input('title.en'));
-            }
-
-            $post->update([
-                'title' => $updateData['title'],
-                'content' => $updateData['content'],
-                'slug' => $slug ?? $post->slug,
-            ]);
-
-
-            if ($request->hasFile('images')) {
-                $post->updatePostMedia($request->file('images'));
-            }
-
-            info("arrive here");
-
-            DB::commit();
+            $post = $this->postService->updatePost(
+                $slug,
+                $request->validated(),
+                $request->hasFile('images') ? $request->file('images') : null
+            );
 
             return $this->successResponse(
-                data: new PostResource($post->refresh()),
+                data: new PostResource($post),
                 message: 'Post updated successfully'
             );
         } catch (AuthorizationException $e) {
-            DB::rollBack();
             return $this->errorResponse(
                 message: 'You are not authorized to update this post',
                 status: 403
             );
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->errorResponse(
                 message: 'Failed to update post',
                 status: 500
@@ -100,19 +82,7 @@ class PostController extends Controller
     public function destroy($slug)
     {
         try {
-            $post = Post::with(['media', 'comments'])
-                ->where('slug', $slug)
-                ->firstOrFail();
-
-            Gate::authorize('delete', $post);
-
-            DB::transaction(function () use ($post) {
-                $post->media()->delete();
-
-                $post->comments()->delete();
-
-                $post->delete();
-            });
+            $this->postService->deletePost($slug);
 
             return $this->successResponse(
                 message: 'Post and all associated content deleted successfully',

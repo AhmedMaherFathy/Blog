@@ -2,57 +2,38 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\User;
+use App\Services\AuthService;
 use App\Traits\HttpResponse;
 use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
-use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
     use HttpResponse;
 
+    public function __construct(private AuthService $authService) {}
+
     public function register(RegisterRequest $request)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $token = JWTAuth::fromUser($user);
-
-        return $this->successResponse([
-            'user' => $user,
-            'authorization' =>
-                [
-                    'token' => $token,
-                    'type' => 'bearer',
-                ]
-        ]);
+        try {
+            $data = $this->authService->registerUser($request->validated());
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse(message: $e->getMessage());
+        }
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
         try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return $this->errorResponse(message : 'Invalid credentials');
-            }
+            $data = $this->authService->loginUser($request->only('email', 'password'));
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                message: $e->getMessage(),
+                status: $e->getCode() ?: 400
+            );
         }
-        catch (JWTException) {
-            return $this->errorResponse(message : 'Could not create token' , status: 500);
-        }
-
-        return $this->successResponse([
-            'authorization' =>
-                [
-                    'token' => $token,
-                    'type' => 'bearer',
-                ]
-        ]);
     }
 }
