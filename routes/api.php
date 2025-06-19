@@ -8,14 +8,13 @@ use Illuminate\Support\Facades\Route;
 Route::post('register',[AuthController::class,'register']);
 Route::post('login',[AuthController::class,'login']);
 
-Route::middleware('auth:api')->group(function(){
-    Route::post('posts',[PostController::class,'store']);
-    // Route::get('posts',[PostController::class,'index']);
-    Route::get('posts/{slug}',[PostController::class,'show']);
-    Route::post('posts/{slug}',[PostController::class,'update']);
-    Route::delete('posts/{slug}',[PostController::class,'destroy']);
+Route::prefix('posts')->middleware('auth:api')->group(function(){
+    Route::post('/',[PostController::class,'store']);
+    Route::get('/{slug}',[PostController::class,'show']);
+    Route::post('/{slug}',[PostController::class,'update']);
+    Route::delete('/{slug}',[PostController::class,'destroy']);
 
-    Route::post('posts/{slug}/comments',[CommentController::class,'store']);
-    Route::get('posts/{slug}/comments',[CommentController::class,'getPostComments']);
+    Route::post('/{slug}/comments',[CommentController::class,'store']);
+    Route::get('/{slug}/comments',[CommentController::class,'getPostComments']);
 });
 
