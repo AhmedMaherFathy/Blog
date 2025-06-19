@@ -1,6 +1,7 @@
 Blog API Project
 
 Packages Used:
+
         spatie/laravel-medialibrary
 
         spatie/laravel-translatable
@@ -8,9 +9,11 @@ Packages Used:
         tymon/jwt-auth
 
 design pattern used
+
         Service pattern
 
 Implementation Steps:
+
         I created a middleware called SetLanguageMiddleware to change the language based on the Accept-Language header.
 
         I developed a trait called HttpResponse to standardize the response format across the API.
